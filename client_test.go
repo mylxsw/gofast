@@ -86,14 +86,18 @@ func TestClient_canceled(t *testing.T) {
 			return
 		}
 		innerCtx, cancel := context.WithCancel(r.Context())
-		req := NewRequest(c, r.WithContext(innerCtx))
 
 		// cancel before request
 		cancel()
+		req := NewRequest(c, r.WithContext(innerCtx))
+
+		// wait for the cancel signal to kick in
+		// or the artificial wait timeout
 		select {
-		case <-time.After(5 * time.Millisecond):
-			// artifically wait for some times
-			// to let the cancel signal kick in
+		case <-innerCtx.Done():
+			t.Logf("cancel effective")
+		case <-time.After(100 * time.Millisecond):
+			t.Logf("time out reach")
 		}
 
 		// handle the result
